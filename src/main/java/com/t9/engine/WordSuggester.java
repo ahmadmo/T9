@@ -64,7 +64,7 @@ public final class WordSuggester {
         final Map<String, Integer> words = new ConcurrentHashMap<>();
         WordGenerator.generate(mapTable(input), trie, words::put);
         wordList.add(words);
-        if (--delta >= 0) for (int i = 2; i <= 8; i++) {
+        if (--delta >= 0) for (int i = 2; i <= 9; i++) {
             suggest(trie, input + i, delta, wordList);
         }
     }
@@ -72,7 +72,7 @@ public final class WordSuggester {
     private static char[][] mapTable(String input) {
         int n = input.length();
         if (n < 1 || !INPUT_PATTERN.matcher(input).matches()) {
-            throw new IllegalArgumentException("Input string must contains only digits 2..8");
+            throw new IllegalArgumentException("Input string must contains only digits 2..9");
         }
         final char[][] table = new char[n][];
         for (int i = 0; i < n; i++) {
