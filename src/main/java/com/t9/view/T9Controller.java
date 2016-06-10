@@ -23,6 +23,8 @@ import com.t9.util.fx.Colors;
 import com.t9.util.fx.MouseHandler;
 import com.t9.view.controls.KeyPadButton;
 import com.t9.view.controls.StyledLabel;
+import com.t9.view.controls.Symbols;
+import com.t9.view.controls.WordSelector;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.ParallelTransition;
@@ -40,6 +42,10 @@ import java.util.function.Function;
 public final class T9Controller {
 
     private final T9Layout layout;
+
+    private final WordSelector wordSelector = new WordSelector();
+    private final Symbols symbols = new Symbols(8, 8);
+
     private final Switch<ColorScheme> colorSchemeSwitch;
 
     public T9Controller(T9Layout layout, Switch<ColorScheme> colorSchemeSwitch) {
@@ -49,20 +55,26 @@ public final class T9Controller {
     }
 
     private void init() {
-        // set current color scheme
-        setColorScheme(colorSchemeSwitch.get(), false);
+        wordSelector.fontSizeProperty().bind(layout.getTextArea().fontSizeProperty());
+
+        // setup autocompleter
+        new T9AutoComplete(layout, wordSelector);
+
+        // symbols
+        symbols.primaryTextFillColorProperty().bind(layout.getTextArea().textFillColorProperty());
+        symbols.primaryBgColorProperty().bind(layout.getTextArea().bgColorProperty());
 
         // setting up plus button
         final Transition fadeIn = fadeInSymbols();
         final Transition fadeOut = fadeOutSymbols();
         final Switch<Runnable> plusButtonAction = new Switch<>();
         plusButtonAction.setLeft(() -> {
-            for (StyledLabel label : layout.getSymbols().getLabels()) {
+            for (StyledLabel label : symbols.getLabels()) {
                 label.setOpacity(0);
             }
             fadeOut.stop();
-            if (layout.getTextAreaPane().getChildren().size() == 1) {
-                layout.getTextAreaPane().getChildren().add(layout.getSymbols());
+            if (!layout.getTextAreaPane().getChildren().contains(symbols)) {
+                layout.getTextAreaPane().getChildren().add(symbols);
             }
             fadeIn.playFromStart();
         });
@@ -73,7 +85,7 @@ public final class T9Controller {
         MouseHandler.addPrimaryHandler(layout.getPlusButton(), MouseEvent.MOUSE_CLICKED, event -> plusButtonAction.getAndSwitch().run());
 
         // adding symbols handlers
-        for (final StyledLabel label : layout.getSymbols().getLabels()) {
+        for (final StyledLabel label : symbols.getLabels()) {
             MouseHandler.addPrimaryHandler(label, MouseEvent.MOUSE_CLICKED, event -> {
                 if (plusButtonAction.toLeft()) {
                     plusButtonAction.getRight().run();
@@ -117,6 +129,9 @@ public final class T9Controller {
                 setColorScheme(colorSchemeSwitch.switchAndGet(), shiftButtonState.getIndex() == 2);
             }
         });
+
+        // set current color scheme
+        setColorScheme(colorSchemeSwitch.get(), false);
     }
 
     private void switchCase(Function<String, String> function) {
@@ -130,11 +145,11 @@ public final class T9Controller {
     }
 
     private void setColorScheme(final ColorScheme colorScheme, final boolean shiftButtonEnabled) {
-        layout.getRoot().setStyle("-fx-background-color: " + Colors.webString(colorScheme.get("root-bg")) + ";");
+        layout.setStyle("-fx-background-color: " + Colors.webString(colorScheme.get("root-bg")) + ";");
         layout.getTextArea().setTextFillColor(colorScheme.get("text-area-text-fill"));
         layout.getTextArea().setBgColor(colorScheme.get("text-area-bg"));
-        layout.getSymbols().setSecondaryTextFillColor(colorScheme.get("symbols-secondary-text-fill"));
-        layout.getSymbols().setSecondaryBgColor(colorScheme.get("symbols-secondary-bg"));
+        symbols.setSecondaryTextFillColor(colorScheme.get("symbols-secondary-text-fill"));
+        symbols.setSecondaryBgColor(colorScheme.get("symbols-secondary-bg"));
         layout.getButtons().stream()
                 .filter(button -> button != layout.getShiftButton() || !shiftButtonEnabled)
                 .forEach(button -> setButtonColor(colorScheme, button, false));
@@ -155,9 +170,9 @@ public final class T9Controller {
     private Transition fadeInSymbols() {
         ParallelTransition parallelTransition = new ParallelTransition();
         double ms = 250;
-        double df = 1.0 / layout.getSymbols().getLabels().size();
+        double df = 1.0 / symbols.getLabels().size();
         double f = 0;
-        for (StyledLabel label : layout.getSymbols().getLabels()) {
+        for (StyledLabel label : symbols.getLabels()) {
             FadeTransition fadeTransition = new FadeTransition(Duration.millis(ms + ms * f), label);
             fadeTransition.setInterpolator(Interpolator.EASE_IN);
             fadeTransition.setFromValue(0);
@@ -171,9 +186,9 @@ public final class T9Controller {
     private Transition fadeOutSymbols() {
         ParallelTransition parallelTransition = new ParallelTransition();
         double ms = 75;
-        double df = 1.0 / layout.getSymbols().getLabels().size();
+        double df = 1.0 / symbols.getLabels().size();
         double f = 0;
-        for (StyledLabel label : layout.getSymbols().getLabels()) {
+        for (StyledLabel label : symbols.getLabels()) {
             FadeTransition fadeTransition = new FadeTransition(Duration.millis(ms + ms * f), label);
             fadeTransition.setInterpolator(Interpolator.EASE_OUT);
             fadeTransition.setFromValue(1);
@@ -181,7 +196,7 @@ public final class T9Controller {
             parallelTransition.getChildren().add(fadeTransition);
             f += df;
         }
-        parallelTransition.setOnFinished(event -> layout.getTextAreaPane().getChildren().remove(1));
+        parallelTransition.setOnFinished(event -> layout.getTextAreaPane().getChildren().remove(symbols));
         return parallelTransition;
     }
 

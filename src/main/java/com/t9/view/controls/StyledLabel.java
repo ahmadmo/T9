@@ -78,16 +78,19 @@ public final class StyledLabel extends Label {
     private void init() {
         textFillColorString.set(Colors.webString(textFillColor.get()));
         bgColorString.set(Colors.webString(bgColor.get()));
+
         textFillColor.addListener((observable, oldValue, newValue) -> {
             textFillColorString.set(Colors.webString(newValue));
         });
         bgColor.addListener((observable, oldValue, newValue) -> {
             bgColorString.set(Colors.webString(newValue));
         });
+
         styleProperty().bind(
                 new SimpleStringProperty("-fx-font-size: ").concat(fontSize)
                         .concat("px; -fx-text-fill: ").concat(textFillColorString)
-                        .concat("; -fx-background-color : ").concat(bgColorString).concat(";")
+                        .concat("; -fx-background-color : ").concat(bgColorString)
+                        .concat(";")
         );
     }
 

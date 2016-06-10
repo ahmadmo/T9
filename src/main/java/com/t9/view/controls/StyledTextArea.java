@@ -17,7 +17,9 @@
 package com.t9.view.controls;
 
 import com.t9.util.fx.Colors;
+import com.t9.util.fx.InsetsUtil;
 import javafx.beans.property.*;
+import javafx.geometry.Insets;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -32,9 +34,11 @@ public final class StyledTextArea extends TextArea {
     private final IntegerProperty fontSize;
     private final ObjectProperty<Color> textFillColor;
     private final ObjectProperty<Color> bgColor;
+    private final ObjectProperty<Insets> borderWidth;
 
     private final StringProperty textFillColorString = new SimpleStringProperty();
     private final StringProperty bgColorString = new SimpleStringProperty();
+    private final StringProperty borderWidthString = new SimpleStringProperty();
     private final AtomicBoolean contentStyleBounded = new AtomicBoolean();
 
     public StyledTextArea() {
@@ -66,26 +70,39 @@ public final class StyledTextArea extends TextArea {
     }
 
     public StyledTextArea(String text, int fontSize, Color textFillColor, Color bgColor) {
+        this(text, fontSize, textFillColor, bgColor, new Insets(0, 0, 2, 0));
+    }
+
+    public StyledTextArea(String text, int fontSize, Color textFillColor, Color bgColor, Insets borderWidth) {
         super(text);
         this.fontSize = new SimpleIntegerProperty(fontSize);
         this.textFillColor = new SimpleObjectProperty<>(textFillColor);
         this.bgColor = new SimpleObjectProperty<>(bgColor);
+        this.borderWidth = new SimpleObjectProperty<>(borderWidth);
         init();
     }
 
     private void init() {
         textFillColorString.set(Colors.webString(textFillColor.get()));
         bgColorString.set(Colors.webString(bgColor.get()));
+        borderWidthString.set(InsetsUtil.cssString(borderWidth.get()));
+
         textFillColor.addListener((observable, oldValue, newValue) -> {
             textFillColorString.set(Colors.webString(newValue));
         });
         bgColor.addListener((observable, oldValue, newValue) -> {
             bgColorString.set(Colors.webString(newValue));
         });
+        borderWidth.addListener((observable, oldValue, newValue) -> {
+            borderWidthString.set(InsetsUtil.cssString(newValue));
+        });
+
         styleProperty().bind(
                 new SimpleStringProperty("-fx-font-size: ").concat(fontSize)
                         .concat("px; -fx-text-fill: ").concat(textFillColorString)
-                        .concat("; -fx-background-color: ").concat(bgColorString).concat(";")
+                        .concat("; -fx-background-color: ").concat(bgColorString)
+                        .concat("; -fx-border-width: ").concat(borderWidthString)
+                        .concat(";")
         );
 
         tryBindContentStyle();
@@ -139,6 +156,18 @@ public final class StyledTextArea extends TextArea {
 
     public void setBgColor(Color bgColor) {
         this.bgColor.set(bgColor);
+    }
+
+    public Insets getBorderWidth() {
+        return borderWidth.get();
+    }
+
+    public ObjectProperty<Insets> borderWidthProperty() {
+        return borderWidth;
+    }
+
+    public void setBorderWidth(Insets borderWidth) {
+        this.borderWidth.set(borderWidth);
     }
 
 }

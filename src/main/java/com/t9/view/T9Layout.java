@@ -20,7 +20,6 @@ import com.t9.util.stream.MoreCollectors;
 import com.t9.view.controls.KeyPadButton;
 import com.t9.view.controls.StyledLabel;
 import com.t9.view.controls.StyledTextArea;
-import com.t9.view.controls.Symbols;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -28,20 +27,21 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * @author ahmad
  */
-public final class T9Layout {
+public final class T9Layout extends BorderPane {
 
-    private final BorderPane root;
     private final MenuBar menuBar;
     private final Menu preferencesMenu;
     private final Menu fontSizeMenu;
@@ -53,7 +53,6 @@ public final class T9Layout {
     private final ToggleGroup themesToggleGroup;
     private final StackPane textAreaPane;
     private final StyledTextArea textArea;
-    private final Symbols symbols;
     private final GridPane numPad;
     private final KeyPadButton plusButton;
     private final KeyPadButton spaceButton;
@@ -65,8 +64,6 @@ public final class T9Layout {
     }
 
     public T9Layout(int textAreaFontSize) {
-        root = new BorderPane();
-
         // menu bar
         fontSizeMenuItems = Collections.unmodifiableMap(
                 Arrays.asList(9, 10, 11, 12, 13, 14, 18, 24, 26, 36, 48, 64, 72, 96)
@@ -94,9 +91,7 @@ public final class T9Layout {
         // text area
         textArea = new StyledTextArea(textAreaFontSize);
         textArea.setWrapText(true);
-        symbols = new Symbols(8, 8);
-        symbols.primaryTextFillColorProperty().bind(textArea.textFillColorProperty());
-        symbols.primaryBgColorProperty().bind(textArea.bgColorProperty());
+
         textAreaPane = new StackPane(textArea);
 
         // num pad
@@ -104,18 +99,18 @@ public final class T9Layout {
         numPad.setAlignment(Pos.CENTER);
         numPad.setHgap(12);
         numPad.setVgap(8);
-        numPad.add(createButton("1", ".", 22, Pos.BOTTOM_RIGHT), 0, 0);
-        numPad.add(createButton("2", "abc", 16, Pos.CENTER), 1, 0);
-        numPad.add(createButton("3", "def", 16, Pos.CENTER), 2, 0);
-        numPad.add(createButton("4", "ghi", 16, Pos.CENTER), 0, 1);
-        numPad.add(createButton("5", "jkl", 16, Pos.CENTER), 1, 1);
-        numPad.add(createButton("6", "mno", 16, Pos.CENTER), 2, 1);
-        numPad.add(createButton("7", "pqrs", 16, Pos.CENTER), 0, 2);
-        numPad.add(createButton("8", "tuv", 16, Pos.CENTER), 1, 2);
-        numPad.add(createButton("9", "wxyz", 16, Pos.CENTER), 2, 2);
-        numPad.add(plusButton = createButton("*", "+", 18, Pos.BOTTOM_RIGHT), 0, 3);
-        numPad.add(spaceButton = createButton("0", "\u2423", 18, Pos.BOTTOM_RIGHT), 1, 3);
-        numPad.add(shiftButton = createButton("#", "\u2191", 18, Pos.BOTTOM_RIGHT), 2, 3);
+        numPad.add(createButton("1", ".", Pos.BOTTOM_RIGHT), 0, 0);
+        numPad.add(createButton("2", "abc", Pos.CENTER), 1, 0);
+        numPad.add(createButton("3", "def", Pos.CENTER), 2, 0);
+        numPad.add(createButton("4", "ghi", Pos.CENTER), 0, 1);
+        numPad.add(createButton("5", "jkl", Pos.CENTER), 1, 1);
+        numPad.add(createButton("6", "mno", Pos.CENTER), 2, 1);
+        numPad.add(createButton("7", "pqrs", Pos.CENTER), 0, 2);
+        numPad.add(createButton("8", "tuv", Pos.CENTER), 1, 2);
+        numPad.add(createButton("9", "wxyz", Pos.CENTER), 2, 2);
+        numPad.add(plusButton = createButton("*", "+", Pos.BOTTOM_RIGHT), 0, 3);
+        numPad.add(spaceButton = createButton("0", "\u2423", Pos.BOTTOM_RIGHT), 1, 3);
+        numPad.add(shiftButton = createButton("#", "\u2191", Pos.BOTTOM_RIGHT), 2, 3);
 
         buttons = Collections.unmodifiableList(
                 numPad.getChildren().stream()
@@ -123,22 +118,58 @@ public final class T9Layout {
                         .collect(Collectors.toList())
         );
 
+        numPad.prefHeightProperty().bind(heightProperty().divide(2));
+
         // resizable buttons
         for (KeyPadButton button : buttons) {
             button.prefWidthProperty().bind(numPad.widthProperty().divide(4));
             button.prefHeightProperty().bind(numPad.heightProperty().divide(4));
+//            button.minWidthProperty().bind(button.heightProperty());
         }
-        numPad.prefHeightProperty().bind(root.heightProperty().divide(2));
+
+        numPad.setMinWidth(Screen.getPrimary().getBounds().getWidth() / 6);
+
+        // responsive layout
+        final AtomicBoolean flag = new AtomicBoolean();
+        layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.getWidth() / newValue.getHeight() > 1.15) {
+                if (flag.compareAndSet(false, true)) {
+                    getChildren().removeAll(textAreaPane, numPad);
+                    setRight(textAreaPane);
+                    setLeft(numPad);
+
+                    numPad.prefWidthProperty().bind(widthProperty().divide(3));
+                    numPad.prefHeightProperty().bind(heightProperty());
+
+                    for (KeyPadButton button : buttons) {
+                        button.prefHeightProperty().bind(numPad.heightProperty().divide(6));
+                    }
+
+                    textAreaPane.prefWidthProperty().bind(widthProperty().divide(1.5));
+                    textArea.setBorderWidth(new Insets(0, 0, 0, 2));
+                }
+            } else if (flag.compareAndSet(true, false)) {
+                getChildren().removeAll(textAreaPane, numPad);
+                setCenter(textAreaPane);
+                setBottom(numPad);
+
+                numPad.prefWidthProperty().bind(widthProperty());
+                numPad.prefHeightProperty().bind(heightProperty().divide(2));
+
+                for (KeyPadButton button : buttons) {
+                    button.prefHeightProperty().bind(numPad.heightProperty().divide(4));
+                }
+
+                textAreaPane.prefWidthProperty().bind(widthProperty());
+                textArea.setBorderWidth(new Insets(0, 0, 2, 0));
+            }
+        });
 
         // set positions
-        root.setTop(new VBox(menuBar));
-        root.setCenter(textAreaPane);
-        root.setBottom(numPad);
-        BorderPane.setMargin(numPad, new Insets(42, 0, 54, 0));
-    }
-
-    public BorderPane getRoot() {
-        return root;
+        setTop(new VBox(menuBar));
+        setCenter(textAreaPane);
+        setBottom(numPad);
+        BorderPane.setMargin(numPad, new Insets(42, 12, 54, 12));
     }
 
     public MenuBar getMenuBar() {
@@ -185,10 +216,6 @@ public final class T9Layout {
         return textArea;
     }
 
-    public Symbols getSymbols() {
-        return symbols;
-    }
-
     public GridPane getNumPad() {
         return numPad;
     }
@@ -209,10 +236,10 @@ public final class T9Layout {
         return buttons;
     }
 
-    private static KeyPadButton createButton(String primaryText, String secondaryText, int secondaryFontSize, Pos secondaryPosition) {
+    private static KeyPadButton createButton(String primaryText, String secondaryText, Pos secondaryPosition) {
         return new KeyPadButton(
                 new StyledLabel(primaryText, 24, Pos.CENTER),
-                new StyledLabel(secondaryText, secondaryFontSize, secondaryPosition)
+                new StyledLabel(secondaryText, 16, secondaryPosition)
         );
     }
 

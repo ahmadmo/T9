@@ -41,7 +41,7 @@ public final class Colors {
                 + (int) Math.round(color.getRed() * 255.0) + ","
                 + (int) Math.round(color.getGreen() * 255.0) + ","
                 + (int) Math.round(color.getBlue() * 255.0) + ","
-                + new BigDecimal(color.getOpacity()).toPlainString()
+                + BigDecimal.valueOf(color.getOpacity()).toPlainString()
                 + ")";
     }
 

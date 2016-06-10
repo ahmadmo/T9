@@ -16,8 +16,12 @@
 
 package com.t9.view.controls;
 
+import com.t9.util.fx.Clickable;
 import com.t9.util.fx.Colors;
-import javafx.animation.*;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.beans.property.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -32,7 +36,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -189,7 +192,7 @@ public final class Symbols extends ScrollPane {
 
         for (StyledLabel label : labels) {
             setupHoverEffect(label);
-            setupClickEffect(label);
+            Clickable.install(label);
         }
     }
 
@@ -243,34 +246,6 @@ public final class Symbols extends ScrollPane {
         label.addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
             t1.stop();
             t2.playFromStart();
-        });
-    }
-
-    private void setupClickEffect(StyledLabel label) {
-        final Duration d = Duration.millis(20);
-        final TranslateTransition t1 = new TranslateTransition(d, label);
-        final TranslateTransition t2 = new TranslateTransition(d, label);
-        final AtomicBoolean play = new AtomicBoolean();
-
-        t1.setByY(3);
-        t2.setByY(-3);
-
-        label.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
-            play.set(true);
-            t2.stop();
-            t1.playFromStart();
-        });
-        label.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
-            if (play.compareAndSet(true, false)) {
-                t1.stop();
-                t2.playFromStart();
-            }
-        });
-        label.addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
-            if (play.compareAndSet(true, false)) {
-                t1.stop();
-                t2.playFromStart();
-            }
         });
     }
 

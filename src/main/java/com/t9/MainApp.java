@@ -21,7 +21,10 @@ import com.t9.util.fx.ColorScheme;
 import com.t9.view.T9Controller;
 import com.t9.view.T9Layout;
 import javafx.application.Application;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -29,15 +32,21 @@ import javafx.stage.Stage;
  */
 public final class MainApp extends Application {
 
+    private static final ReadOnlyObjectWrapper<Stage> STAGE = new ReadOnlyObjectWrapper<>();
+
     @Override
     public void start(Stage primaryStage) throws Exception {
+        STAGE.set(primaryStage);
+
         // color schemes
         ColorScheme darkColorScheme = new ColorScheme("/fx/colors/dark-color-scheme.properties");
         ColorScheme lightColorScheme = new ColorScheme("/fx/colors/light-color-scheme.properties");
 
         // init layout and scene
         T9Layout layout = new T9Layout(18);
-        Scene scene = new Scene(layout.getRoot(), 420, (double) 420 * 16 / 9);
+
+        double width = Screen.getPrimary().getBounds().getWidth() * 3 / 4;
+        Scene scene = new Scene(layout, width, width * 9 / 16);
         scene.getStylesheets().add(getClass().getResource("/fx/css/material-fx.css").toExternalForm());
 
         // select current menu items
@@ -53,6 +62,14 @@ public final class MainApp extends Application {
         primaryStage.show();
 
         layout.getTextArea().tryBindContentStyle();
+    }
+
+    public static Stage getStage() {
+        return STAGE.get();
+    }
+
+    public static ReadOnlyObjectProperty<Stage> stageProperty() {
+        return STAGE.getReadOnlyProperty();
     }
 
     public static void main(String[] args) {
